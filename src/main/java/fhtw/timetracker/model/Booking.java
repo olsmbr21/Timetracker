@@ -1,7 +1,8 @@
 package fhtw.timetracker.model;
 
 /**
- * Stage 03.1: Booking-Datenmodell (ohne CSV-Logik).
+ * Stage 03.2: Booking kann sich als CSV-Zeile speichern (6 Spalten).
+ * Format: id;userName;taskId;date;durationMinutes;status
  */
 public class Booking {
 
@@ -32,4 +33,13 @@ public class Booking {
     public String getStatus() { return status; }
 
     public void setStatus(String status) { this.status = status; }
+
+    private static String safe(String s) {
+        if (s == null) return "";
+        return s.replace(";", ",");
+    }
+
+    public String toCsvLine() {
+        return id + ";" + safe(userName) + ";" + taskId + ";" + safe(date) + ";" + durationMinutes + ";" + safe(status);
+    }
 }
