@@ -2,6 +2,7 @@ package fhtw.timetracker.util;
 
 import fhtw.timetracker.model.Booking;
 
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -9,6 +10,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Stage 04.1: Repository-Grundgerüst.
@@ -34,5 +37,18 @@ public class CsvBookingRepository {
             writer.write(booking.toCsvLine());
             writer.newLine();
         }
+    }
+    public synchronized List<Booking> loadAll() throws IOException {
+        List<Booking> list = new ArrayList<>();
+        if (!Files.exists(file)) return list;
+
+        try (BufferedReader reader = Files.newBufferedReader(file, StandardCharsets.UTF_8)) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                Booking b = Booking.fromCsvLine(line);
+                if (b != null) list.add(b);
+            }
+        }
+        return list;
     }
 }
