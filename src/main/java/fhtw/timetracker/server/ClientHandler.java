@@ -7,7 +7,7 @@ import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 
 /**
- * Stage 05.1: Liest Client-Zeilen, antwortet erstmal nur OK.
+ * Stage 05.2: Grundlegendes Command-Parsing.
  */
 public class ClientHandler implements Runnable {
 
@@ -27,14 +27,25 @@ public class ClientHandler implements Runnable {
 
             String line;
             while ((line = in.readLine()) != null) {
-                out.write("OK\n");
+                if (line.isBlank()) continue;
+
+                out.write(handleCommand(line));
                 out.flush();
+
                 if (line.startsWith("QUIT")) break;
             }
 
         } catch (IOException e) {
             System.err.println("ClientHandler error: " + e.getMessage());
         }
+    }
+
+    private String handleCommand(String line) {
+        String[] parts = line.split(";", 2);
+        String cmd = parts[0];
+
+        if ("QUIT".equals(cmd)) return "OK\n";
+        return "ERROR;Unknown command\n";
     }
 }
 
