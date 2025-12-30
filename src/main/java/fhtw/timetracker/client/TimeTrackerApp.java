@@ -7,6 +7,7 @@ import fhtw.timetracker.model.SupportTask;
 import fhtw.timetracker.model.Task;
 import fhtw.timetracker.server.TimeTrackerServer;
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
@@ -43,7 +44,7 @@ public class TimeTrackerApp extends Application {
         VBox root = new VBox(10, new Label("User:"), txtUser, tabs);
         root.setPadding(new Insets(12));
 
-        stage.setTitle("TimeTracker (Stage 06.4)");
+        stage.setTitle("TimeTracker (Stage 06.5)");
         stage.setScene(new Scene(root, 1000, 600));
         stage.show();
     }
@@ -139,25 +140,34 @@ public class TimeTrackerApp extends Application {
 
             Booking b = new Booking(System.currentTimeMillis(), user, task.getId(), date.toString(), minutes, Booking.STATUS_ACTIVE);
 
-            try {
-                service.sendBooking(b); // noch im UI-Thread (wird in 06.5 verbessert)
-                lbl.setText("OK: gesendet");
-            } catch (IOException ex) {
-                lbl.setText("Fehler: " + ex.getMessage());
-            }
+            new Thread(() -> {
+                try {
+                    service.sendBooking(b);
+                    Platform.runLater(() -> {
+                        lbl.setText("OK: gesendet");
+                        txtMinutes.clear();
+                    });
+                } catch (IOException ex) {
+                    Platform.runLater(() -> lbl.setText("Fehler: " + ex.getMessage()));
+                }
+            }, "client-send-booking").start();
         });
 
         btnLoad.setOnAction(e -> {
             String user = txtUser.getText().trim();
             if (user.isEmpty()) { lbl.setText("User fehlt."); return; }
 
-            try {
-                List<Booking> list = service.loadBookingsForUser(user); // noch im UI-Thread
-                myBookings.setAll(list);
-                lbl.setText("OK: geladen (" + list.size() + ")");
-            } catch (IOException ex) {
-                lbl.setText("Fehler: " + ex.getMessage());
-            }
+            new Thread(() -> {
+                try {
+                    List<Booking> list = service.loadBookingsForUser(user);
+                    Platform.runLater(() -> {
+                        myBookings.setAll(list);
+                        lbl.setText("OK: geladen (" + list.size() + ")");
+                    });
+                } catch (IOException ex) {
+                    Platform.runLater(() -> lbl.setText("Fehler: " + ex.getMessage()));
+                }
+            }, "client-load-bookings").start();
         });
 
         VBox box = new VBox(10,
