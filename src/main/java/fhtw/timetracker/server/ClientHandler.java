@@ -6,10 +6,13 @@ import fhtw.timetracker.util.CsvBookingRepository;
 import java.io.*;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 /**
- * Stage 05.3: CREATE_BOOKING implementiert.
- * Protokoll: CREATE_BOOKING;<bookingCsvLine>
+ * Stage 05.4: GET_BOOKINGS implementiert.
+ * Protokoll:
+ * - CREATE_BOOKING;<bookingCsvLine>
+ * - GET_BOOKINGS;<userName>
  */
 public class ClientHandler implements Runnable {
 
@@ -49,6 +52,7 @@ public class ClientHandler implements Runnable {
 
         try {
             if ("CREATE_BOOKING".equals(cmd)) return handleCreateBooking(data);
+            if ("GET_BOOKINGS".equals(cmd)) return handleGetBookings(data);
             if ("QUIT".equals(cmd)) return "OK\n";
             return "ERROR;Unknown command\n";
         } catch (IOException e) {
@@ -63,5 +67,18 @@ public class ClientHandler implements Runnable {
         repository.saveBooking(booking);
         return "OK\n";
     }
+
+    private String handleGetBookings(String userName) throws IOException {
+        if (userName == null || userName.isBlank()) return "ERROR;Missing username\n";
+
+        List<Booking> all = repository.loadAll();
+        StringBuilder sb = new StringBuilder("OK\n");
+        for (Booking b : all) {
+            if (userName.equals(b.getUserName())) sb.append(b.toCsvLine()).append("\n");
+        }
+        sb.append("END\n");
+        return sb.toString();
+    }
 }
+
 
