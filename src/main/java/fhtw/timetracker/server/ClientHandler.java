@@ -1,5 +1,6 @@
 package fhtw.timetracker.server;
 
+import fhtw.timetracker.model.Booking;
 import fhtw.timetracker.util.CsvBookingRepository;
 
 import java.io.*;
@@ -7,7 +8,8 @@ import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 
 /**
- * Stage 05.2: Grundlegendes Command-Parsing.
+ * Stage 05.3: CREATE_BOOKING implementiert.
+ * Protokoll: CREATE_BOOKING;<bookingCsvLine>
  */
 public class ClientHandler implements Runnable {
 
@@ -43,9 +45,23 @@ public class ClientHandler implements Runnable {
     private String handleCommand(String line) {
         String[] parts = line.split(";", 2);
         String cmd = parts[0];
+        String data = (parts.length > 1) ? parts[1] : "";
 
-        if ("QUIT".equals(cmd)) return "OK\n";
-        return "ERROR;Unknown command\n";
+        try {
+            if ("CREATE_BOOKING".equals(cmd)) return handleCreateBooking(data);
+            if ("QUIT".equals(cmd)) return "OK\n";
+            return "ERROR;Unknown command\n";
+        } catch (IOException e) {
+            return "ERROR;" + e.getMessage() + "\n";
+        }
+    }
+
+    private String handleCreateBooking(String data) throws IOException {
+        Booking booking = Booking.fromCsvLine(data);
+        if (booking == null) return "ERROR;Invalid booking data\n";
+
+        repository.saveBooking(booking);
+        return "OK\n";
     }
 }
 
