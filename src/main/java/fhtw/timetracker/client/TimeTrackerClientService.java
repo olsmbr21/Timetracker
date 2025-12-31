@@ -47,7 +47,6 @@ public class TimeTrackerClientService {
         }
     }
 
-    // Stage 13: neu
     public void cancelBooking(long bookingId, String userName) throws IOException {
         try (Socket socket = new Socket(host, port);
              BufferedWriter out = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8));
@@ -58,6 +57,20 @@ public class TimeTrackerClientService {
             out.flush();
 
             expectOk(in.readLine());
+        }
+    }
+
+    // Stage 14: neu
+    public List<Booking> loadAllBookings() throws IOException {
+        try (Socket socket = new Socket(host, port);
+             BufferedWriter out = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8));
+             BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8))) {
+
+            out.write("GET_ALL_BOOKINGS");
+            out.newLine();
+            out.flush();
+
+            return readBookings(in);
         }
     }
 
@@ -79,4 +92,3 @@ public class TimeTrackerClientService {
         return result;
     }
 }
-
