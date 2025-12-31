@@ -18,14 +18,17 @@ import javafx.stage.Stage;
 
 import java.io.IOException;
 import java.time.LocalDate;
+import java.util.ArrayList;
 
 /**
- * Stage 15: GUI kann jetzt eine eigene Buchung stornieren (Server prüft bookingId + username).
+ * Stage 16: lokale Filter (ohne Server-Call) für "Meine Buchungen" mit Von/Bis.
  */
 public class TimeTrackerApp extends Application {
 
     private final ObservableList<Task> tasks = FXCollections.observableArrayList();
+
     private final ObservableList<Booking> myBookings = FXCollections.observableArrayList();
+    private final ObservableList<Booking> myBookingsSource = FXCollections.observableArrayList(); // Source für Filter
 
     private final TimeTrackerClientService service = new TimeTrackerClientService("127.0.0.1", 5000);
 
@@ -44,8 +47,8 @@ public class TimeTrackerApp extends Application {
         VBox root = new VBox(10, new Label("User:"), txtUser, tabs);
         root.setPadding(new Insets(12));
 
-        stage.setTitle("TimeTracker (Stage 15)");
-        stage.setScene(new Scene(root, 980, 600));
+        stage.setTitle("TimeTracker (Stage 16)");
+        stage.setScene(new Scene(root, 1100, 620));
         stage.show();
     }
 
@@ -92,7 +95,7 @@ public class TimeTrackerApp extends Application {
 
     private Pane createBookingsPane(TextField txtUser) {
         ComboBox<Task> cmbTask = new ComboBox<>(tasks);
-        cmbTask.setPrefWidth(240);
+        cmbTask.setPrefWidth(220);
 
         DatePicker dpDate = new DatePicker(LocalDate.now());
         TextField txtDuration = new TextField();
@@ -100,6 +103,11 @@ public class TimeTrackerApp extends Application {
 
         TextField txtDesc = new TextField();
         txtDesc.setPromptText("Was wurde gemacht?");
+
+        DatePicker dpFrom = new DatePicker();
+        DatePicker dpTo = new DatePicker();
+        Button btnFilter = new Button("Filtern");
+        Button btnReset = new Button("Reset");
 
         Button btnCreate = new Button("Buchung senden");
         Button btnCancel = new Button("Buchung stornieren");
@@ -138,6 +146,29 @@ public class TimeTrackerApp extends Application {
         colDesc.setCellValueFactory(new PropertyValueFactory<>("description"));
 
         table.getColumns().addAll(colId, colUser, colTaskId, colType, colDate, colDur, colStatus, colTaskDesc, colDesc);
+
+        btnFilter.setOnAction(e -> {
+            LocalDate from = dpFrom.getValue();
+            LocalDate to = dpTo.getValue();
+
+            ArrayList<Booking> filtered = new ArrayList<>();
+            for (Booking b : myBookingsSource) {
+                LocalDate d;
+                try { d = LocalDate.parse(b.getDate()); }
+                catch (Exception ex) { continue; }
+
+                boolean ok = (from == null || !d.isBefore(from)) && (to == null || !d.isAfter(to));
+                if (ok) filtered.add(b);
+            }
+
+            myBookings.setAll(filtered);
+            lbl.setText("OK: Filter angewendet.");
+        });
+
+        btnReset.setOnAction(e -> {
+            myBookings.setAll(myBookingsSource);
+            lbl.setText("OK: Filter zurückgesetzt.");
+        });
 
         btnCreate.setOnAction(e -> {
             String user = txtUser.getText().trim();
@@ -195,6 +226,7 @@ public class TimeTrackerApp extends Application {
                     service.cancelBooking(sel.getId(), user);
                     var list = service.loadBookingsForUser(user);
                     Platform.runLater(() -> {
+                        myBookingsSource.setAll(list);
                         myBookings.setAll(list);
                         lbl.setText("OK: Buchung storniert.");
                     });
@@ -212,6 +244,7 @@ public class TimeTrackerApp extends Application {
                 try {
                     var list = service.loadBookingsForUser(user);
                     Platform.runLater(() -> {
+                        myBookingsSource.setAll(list);
                         myBookings.setAll(list);
                         lbl.setText("OK: " + list.size() + " Buchungen geladen.");
                     });
@@ -226,6 +259,9 @@ public class TimeTrackerApp extends Application {
                 new Label("Datum:"), dpDate,
                 new Label("Min:"), txtDuration,
                 new Label("Desc:"), txtDesc,
+                new Label("Von:"), dpFrom,
+                new Label("Bis:"), dpTo,
+                btnFilter, btnReset,
                 btnCreate, btnCancel, btnLoad
         );
         form.setPadding(new Insets(10));
