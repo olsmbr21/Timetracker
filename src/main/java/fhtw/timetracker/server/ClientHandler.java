@@ -5,14 +5,18 @@ import fhtw.timetracker.util.CsvBookingRepository;
 
 import java.io.*;
 import java.net.Socket;
+import java.net.SocketException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 /**
- * Stage 05.4: GET_BOOKINGS implementiert.
+ * Bearbeitet eine Client-Verbindung und setzt das Textprotokoll um.
+ *
  * Protokoll:
  * - CREATE_BOOKING;<bookingCsvLine>
  * - GET_BOOKINGS;<userName>
+ * - CANCEL_BOOKING;<bookingId>;<userName>
+ * - QUIT
  */
 public class ClientHandler implements Runnable {
 
@@ -39,7 +43,8 @@ public class ClientHandler implements Runnable {
 
                 if (line.startsWith("QUIT")) break;
             }
-
+        } catch (SocketException e) {
+            // Normal, wenn Client abrupt schließt (z.B. Windows "connection aborted").
         } catch (IOException e) {
             System.err.println("ClientHandler error: " + e.getMessage());
         }
@@ -47,13 +52,14 @@ public class ClientHandler implements Runnable {
 
     private String handleCommand(String line) {
         String[] parts = line.split(";", 2);
-        String cmd = parts[0];
+        String command = parts[0];
         String data = (parts.length > 1) ? parts[1] : "";
 
         try {
-            if ("CREATE_BOOKING".equals(cmd)) return handleCreateBooking(data);
-            if ("GET_BOOKINGS".equals(cmd)) return handleGetBookings(data);
-            if ("QUIT".equals(cmd)) return "OK\n";
+            if ("CREATE_BOOKING".equals(command)) return handleCreateBooking(data);
+            if ("GET_BOOKINGS".equals(command)) return handleGetBookings(data);
+            if ("CANCEL_BOOKING".equals(command)) return handleCancelBooking(data);
+            if ("QUIT".equals(command)) return "OK\n";
             return "ERROR;Unknown command\n";
         } catch (IOException e) {
             return "ERROR;" + e.getMessage() + "\n";
@@ -63,7 +69,6 @@ public class ClientHandler implements Runnable {
     private String handleCreateBooking(String data) throws IOException {
         Booking booking = Booking.fromCsvLine(data);
         if (booking == null) return "ERROR;Invalid booking data\n";
-
         repository.saveBooking(booking);
         return "OK\n";
     }
@@ -79,6 +84,20 @@ public class ClientHandler implements Runnable {
         sb.append("END\n");
         return sb.toString();
     }
+
+    private String handleCancelBooking(String data) throws IOException {
+        String[] parts = data.split(";", -1);
+        if (parts.length != 2) return "ERROR;Invalid cancel data\n";
+
+        long bookingId;
+        try {
+            bookingId = Long.parseLong(parts[0]);
+        } catch (NumberFormatException ex) {
+            return "ERROR;Invalid bookingId\n";
+        }
+        String userName = parts[1];
+
+        boolean ok = repository.cancelBooking(bookingId, userName);
+        return ok ? "OK\n" : "ERROR;Not allowed\n";
+    }
 }
-
-
