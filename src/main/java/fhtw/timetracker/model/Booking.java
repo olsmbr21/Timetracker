@@ -1,8 +1,11 @@
 package fhtw.timetracker.model;
 
 /**
- * Stage 03.3: Booking kann auch aus CSV gelesen werden.
- * Format: id;userName;taskId;date;durationMinutes;status
+ * CSV-Format (vorläufig):
+ * id;userName;taskId;date;durationMinutes;status
+ *
+ * Ab Stage 08 schreiben wir 9 Spalten:
+ * id;userName;taskId;date;durationMinutes;status;description;taskDescription;taskType
  */
 public class Booking {
 
@@ -16,30 +19,60 @@ public class Booking {
     private int durationMinutes;
     private String status;
 
+    // Erweiterungen (werden später ins CSV übernommen)
+    private String description;
+    private String taskDescription;
+    private String taskType;
+
+    // Kompatibler Konstruktor (alte 6-Felder Version)
     public Booking(long id, String userName, int taskId, String date, int durationMinutes, String status) {
+        this(id, userName, taskId, date, durationMinutes, status, "", "", "");
+    }
+
+    // Neuer Konstruktor (9 Felder)
+    public Booking(long id, String userName, int taskId, String date,
+                   int durationMinutes, String status,
+                   String description, String taskDescription, String taskType) {
         this.id = id;
         this.userName = userName;
         this.taskId = taskId;
         this.date = date;
         this.durationMinutes = durationMinutes;
         this.status = status;
+        this.description = description;
+        this.taskDescription = taskDescription;
+        this.taskType = taskType;
     }
 
     public long getId() { return id; }
-    public String getUserName() { return userName; }
-    public int getTaskId() { return taskId; }
-    public String getDate() { return date; }
-    public int getDurationMinutes() { return durationMinutes; }
-    public String getStatus() { return status; }
+    public void setId(long id) { this.id = id; }
 
+    public String getUserName() { return userName; }
+    public void setUserName(String userName) { this.userName = userName; }
+
+    public int getTaskId() { return taskId; }
+    public void setTaskId(int taskId) { this.taskId = taskId; }
+
+    public String getDate() { return date; }
+    public void setDate(String date) { this.date = date; }
+
+    public int getDurationMinutes() { return durationMinutes; }
+    public void setDurationMinutes(int durationMinutes) { this.durationMinutes = durationMinutes; }
+
+    public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
 
-    private static String safe(String s) {
-        if (s == null) return "";
-        return s.replace(";", ",");
-    }
+    public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; }
+
+    public String getTaskDescription() { return taskDescription; }
+    public void setTaskDescription(String taskDescription) { this.taskDescription = taskDescription; }
+
+    public String getTaskType() { return taskType; }
+    public void setTaskType(String taskType) { this.taskType = taskType; }
 
     public String toCsvLine() {
+        // Stage 07: noch im 6-Spalten-Format
         return id + ";" + safe(userName) + ";" + taskId + ";" + safe(date) + ";" + durationMinutes + ";" + safe(status);
     }
 
@@ -62,4 +95,11 @@ public class Booking {
             return null;
         }
     }
+
+    private static String safe(String s) {
+        if (s == null) return "";
+        return s.replace(";", ",");
+    }
 }
+
+
