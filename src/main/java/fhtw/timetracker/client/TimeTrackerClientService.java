@@ -9,7 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Stage 06.2: Client kann Buchung senden und Buchungen eines Users laden.
+ * TCP-Client-Service (Request/Response).
  */
 public class TimeTrackerClientService {
 
@@ -30,8 +30,7 @@ public class TimeTrackerClientService {
             out.newLine();
             out.flush();
 
-            String first = in.readLine();
-            if (!"OK".equals(first)) throw new IOException(first == null ? "No response" : first);
+            expectOk(in.readLine());
         }
     }
 
@@ -44,18 +43,40 @@ public class TimeTrackerClientService {
             out.newLine();
             out.flush();
 
-            String first = in.readLine();
-            if (!"OK".equals(first)) throw new IOException(first == null ? "No response" : first);
-
-            List<Booking> list = new ArrayList<>();
-            String line;
-            while ((line = in.readLine()) != null) {
-                if ("END".equals(line)) break;
-                Booking b = Booking.fromCsvLine(line);
-                if (b != null) list.add(b);
-            }
-            return list;
+            return readBookings(in);
         }
+    }
+
+    // Stage 13: neu
+    public void cancelBooking(long bookingId, String userName) throws IOException {
+        try (Socket socket = new Socket(host, port);
+             BufferedWriter out = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8));
+             BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8))) {
+
+            out.write("CANCEL_BOOKING;" + bookingId + ";" + userName);
+            out.newLine();
+            out.flush();
+
+            expectOk(in.readLine());
+        }
+    }
+
+    private void expectOk(String firstLine) throws IOException {
+        if ("OK".equals(firstLine)) return;
+        throw new IOException(firstLine == null ? "No response" : firstLine);
+    }
+
+    private List<Booking> readBookings(BufferedReader in) throws IOException {
+        expectOk(in.readLine());
+
+        List<Booking> result = new ArrayList<>();
+        String line;
+        while ((line = in.readLine()) != null) {
+            if ("END".equals(line)) break;
+            Booking b = Booking.fromCsvLine(line);
+            if (b != null) result.add(b);
+        }
+        return result;
     }
 }
 
