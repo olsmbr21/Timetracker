@@ -1,4 +1,3 @@
-
 package fhtw.timetracker.client;
 
 import fhtw.timetracker.model.Booking;
@@ -21,9 +20,7 @@ import java.io.IOException;
 import java.time.LocalDate;
 
 /**
- * Stage 09: Buchungen speichern zusätzlich:
- * - "Was wurde gemacht?" (description)
- * - Task-Beschreibung + Task-Art werden in die Booking-CSV mitgeschrieben.
+ * Stage 15: GUI kann jetzt eine eigene Buchung stornieren (Server prüft bookingId + username).
  */
 public class TimeTrackerApp extends Application {
 
@@ -47,7 +44,7 @@ public class TimeTrackerApp extends Application {
         VBox root = new VBox(10, new Label("User:"), txtUser, tabs);
         root.setPadding(new Insets(12));
 
-        stage.setTitle("TimeTracker (Stage 09)");
+        stage.setTitle("TimeTracker (Stage 15)");
         stage.setScene(new Scene(root, 980, 600));
         stage.show();
     }
@@ -105,6 +102,7 @@ public class TimeTrackerApp extends Application {
         txtDesc.setPromptText("Was wurde gemacht?");
 
         Button btnCreate = new Button("Buchung senden");
+        Button btnCancel = new Button("Buchung stornieren");
         Button btnLoad = new Button("Meine Buchungen laden");
 
         Label lbl = new Label();
@@ -185,6 +183,27 @@ public class TimeTrackerApp extends Application {
             }, "client-send-booking").start();
         });
 
+        btnCancel.setOnAction(e -> {
+            Booking sel = table.getSelectionModel().getSelectedItem();
+            String user = txtUser.getText().trim();
+
+            if (sel == null) { lbl.setText("Bitte eine Buchung auswählen."); return; }
+            if (user.isEmpty()) { lbl.setText("User fehlt."); return; }
+
+            new Thread(() -> {
+                try {
+                    service.cancelBooking(sel.getId(), user);
+                    var list = service.loadBookingsForUser(user);
+                    Platform.runLater(() -> {
+                        myBookings.setAll(list);
+                        lbl.setText("OK: Buchung storniert.");
+                    });
+                } catch (IOException ex) {
+                    Platform.runLater(() -> lbl.setText("Fehler: " + ex.getMessage()));
+                }
+            }, "client-cancel-booking").start();
+        });
+
         btnLoad.setOnAction(e -> {
             String user = txtUser.getText().trim();
             if (user.isEmpty()) { lbl.setText("User fehlt."); return; }
@@ -207,7 +226,7 @@ public class TimeTrackerApp extends Application {
                 new Label("Datum:"), dpDate,
                 new Label("Min:"), txtDuration,
                 new Label("Desc:"), txtDesc,
-                btnCreate, btnLoad
+                btnCreate, btnCancel, btnLoad
         );
         form.setPadding(new Insets(10));
 
@@ -220,3 +239,4 @@ public class TimeTrackerApp extends Application {
         launch(args);
     }
 }
+
