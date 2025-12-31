@@ -1,10 +1,7 @@
 package fhtw.timetracker.model;
 
 /**
- * CSV-Format (vorläufig):
- * id;userName;taskId;date;durationMinutes;status
- *
- * Ab Stage 08 schreiben wir 9 Spalten:
+ * CSV-Format (9 Spalten):
  * id;userName;taskId;date;durationMinutes;status;description;taskDescription;taskType
  */
 public class Booking {
@@ -19,17 +16,14 @@ public class Booking {
     private int durationMinutes;
     private String status;
 
-    // Erweiterungen (werden später ins CSV übernommen)
     private String description;
     private String taskDescription;
     private String taskType;
 
-    // Kompatibler Konstruktor (alte 6-Felder Version)
     public Booking(long id, String userName, int taskId, String date, int durationMinutes, String status) {
         this(id, userName, taskId, date, durationMinutes, status, "", "", "");
     }
 
-    // Neuer Konstruktor (9 Felder)
     public Booking(long id, String userName, int taskId, String date,
                    int durationMinutes, String status,
                    String description, String taskDescription, String taskType) {
@@ -72,25 +66,39 @@ public class Booking {
     public void setTaskType(String taskType) { this.taskType = taskType; }
 
     public String toCsvLine() {
-        // Stage 07: noch im 6-Spalten-Format
-        return id + ";" + safe(userName) + ";" + taskId + ";" + safe(date) + ";" + durationMinutes + ";" + safe(status);
+        return id + ";" + safe(userName) + ";" + taskId + ";" + safe(date) + ";" + durationMinutes + ";" + safe(status) + ";"
+                + safe(description) + ";" + safe(taskDescription) + ";" + safe(taskType);
     }
 
     public static Booking fromCsvLine(String line) {
         if (line == null || line.isBlank()) return null;
 
         String[] parts = line.split(";", -1);
-        if (parts.length != 6) return null;
 
         try {
+            if (parts.length == 6) {
+                long id = Long.parseLong(parts[0]);
+                String userName = parts[1];
+                int taskId = Integer.parseInt(parts[2]);
+                String date = parts[3];
+                int duration = Integer.parseInt(parts[4]);
+                String status = parts[5];
+                return new Booking(id, userName, taskId, date, duration, status);
+            }
+
+            if (parts.length != 9) return null;
+
             long id = Long.parseLong(parts[0]);
             String userName = parts[1];
             int taskId = Integer.parseInt(parts[2]);
             String date = parts[3];
             int duration = Integer.parseInt(parts[4]);
             String status = parts[5];
+            String bookingDesc = parts[6];
+            String taskDesc = parts[7];
+            String taskType = parts[8];
 
-            return new Booking(id, userName, taskId, date, duration, status);
+            return new Booking(id, userName, taskId, date, duration, status, bookingDesc, taskDesc, taskType);
         } catch (NumberFormatException ex) {
             return null;
         }
@@ -101,5 +109,4 @@ public class Booking {
         return s.replace(";", ",");
     }
 }
-
 
