@@ -11,12 +11,6 @@ import java.util.List;
 
 /**
  * Bearbeitet eine Client-Verbindung und setzt das Textprotokoll um.
- *
- * Protokoll:
- * - CREATE_BOOKING;<bookingCsvLine>
- * - GET_BOOKINGS;<userName>
- * - CANCEL_BOOKING;<bookingId>;<userName>
- * - QUIT
  */
 public class ClientHandler implements Runnable {
 
@@ -58,6 +52,7 @@ public class ClientHandler implements Runnable {
         try {
             if ("CREATE_BOOKING".equals(command)) return handleCreateBooking(data);
             if ("GET_BOOKINGS".equals(command)) return handleGetBookings(data);
+            if ("GET_ALL_BOOKINGS".equals(command)) return handleGetAllBookings();
             if ("CANCEL_BOOKING".equals(command)) return handleCancelBooking(data);
             if ("QUIT".equals(command)) return "OK\n";
             return "ERROR;Unknown command\n";
@@ -85,6 +80,14 @@ public class ClientHandler implements Runnable {
         return sb.toString();
     }
 
+    private String handleGetAllBookings() throws IOException {
+        List<Booking> all = repository.loadAll();
+        StringBuilder sb = new StringBuilder("OK\n");
+        for (Booking b : all) sb.append(b.toCsvLine()).append("\n");
+        sb.append("END\n");
+        return sb.toString();
+    }
+
     private String handleCancelBooking(String data) throws IOException {
         String[] parts = data.split(";", -1);
         if (parts.length != 2) return "ERROR;Invalid cancel data\n";
@@ -101,3 +104,5 @@ public class ClientHandler implements Runnable {
         return ok ? "OK\n" : "ERROR;Not allowed\n";
     }
 }
+
+
