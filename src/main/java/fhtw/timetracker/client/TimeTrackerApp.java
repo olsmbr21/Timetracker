@@ -21,14 +21,16 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 
 /**
- * Stage 16: lokale Filter (ohne Server-Call) für "Meine Buchungen" mit Von/Bis.
+ * Stage 17: Admin-Tab lädt alle Buchungen vom Server (GET_ALL_BOOKINGS).
  */
 public class TimeTrackerApp extends Application {
 
     private final ObservableList<Task> tasks = FXCollections.observableArrayList();
 
     private final ObservableList<Booking> myBookings = FXCollections.observableArrayList();
-    private final ObservableList<Booking> myBookingsSource = FXCollections.observableArrayList(); // Source für Filter
+    private final ObservableList<Booking> myBookingsSource = FXCollections.observableArrayList();
+
+    private final ObservableList<Booking> allBookings = FXCollections.observableArrayList();
 
     private final TimeTrackerClientService service = new TimeTrackerClientService("127.0.0.1", 5000);
 
@@ -42,13 +44,14 @@ public class TimeTrackerApp extends Application {
         TabPane tabs = new TabPane();
         tabs.getTabs().add(new Tab("Tasks", createTasksPane(txtUser)));
         tabs.getTabs().add(new Tab("Bookings", createBookingsPane(txtUser)));
+        tabs.getTabs().add(new Tab("Admin", createAdminPane(txtUser)));
         tabs.getTabs().forEach(t -> t.setClosable(false));
 
         VBox root = new VBox(10, new Label("User:"), txtUser, tabs);
         root.setPadding(new Insets(12));
 
-        stage.setTitle("TimeTracker (Stage 16)");
-        stage.setScene(new Scene(root, 1100, 620));
+        stage.setTitle("TimeTracker (Stage 17)");
+        stage.setScene(new Scene(root, 1150, 640));
         stage.show();
     }
 
@@ -271,8 +274,54 @@ public class TimeTrackerApp extends Application {
         return box;
     }
 
+    private Pane createAdminPane(TextField txtUser) {
+        Label lbl = new Label();
+
+        TableView<Booking> table = new TableView<>(allBookings);
+        table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+
+        TableColumn<Booking, Long> colId = new TableColumn<>("ID");
+        colId.setCellValueFactory(new PropertyValueFactory<>("id"));
+
+        TableColumn<Booking, String> colUser = new TableColumn<>("User");
+        colUser.setCellValueFactory(new PropertyValueFactory<>("userName"));
+
+        TableColumn<Booking, Integer> colTaskId = new TableColumn<>("TaskId");
+        colTaskId.setCellValueFactory(new PropertyValueFactory<>("taskId"));
+
+        TableColumn<Booking, String> colType = new TableColumn<>("Task-Art");
+        colType.setCellValueFactory(new PropertyValueFactory<>("taskType"));
+
+        TableColumn<Booking, String> colDate = new TableColumn<>("Date");
+        colDate.setCellValueFactory(new PropertyValueFactory<>("date"));
+
+        TableColumn<Booking, Integer> colDur = new TableColumn<>("Minutes");
+        colDur.setCellValueFactory(new PropertyValueFactory<>("durationMinutes"));
+
+        TableColumn<Booking, String> colStatus = new TableColumn<>("Status");
+        colStatus.setCellValueFactory(new PropertyValueFactory<>("status"));
+
+        table.getColumns().addAll(colId, colUser, colTaskId, colType, colDate, colDur, colStatus);
+
+        Button btnLoadAll = new Button("Alle Buchungen laden");
+        btnLoadAll.setOnAction(e -> new Thread(() -> {
+            try {
+                var list = service.loadAllBookings();
+                Platform.runLater(() -> {
+                    allBookings.setAll(list);
+                    lbl.setText("OK: " + list.size() + " Buchungen geladen.");
+                });
+            } catch (IOException ex) {
+                Platform.runLater(() -> lbl.setText("Fehler: " + ex.getMessage()));
+            }
+        }, "client-load-all").start());
+
+        VBox box = new VBox(10, btnLoadAll, table, lbl);
+        box.setPadding(new Insets(10));
+        return box;
+    }
+
     public static void main(String[] args) {
         launch(args);
     }
 }
-
