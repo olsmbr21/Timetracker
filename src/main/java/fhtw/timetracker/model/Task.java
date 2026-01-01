@@ -38,6 +38,6 @@ public class Task {
 
     @Override
     public String toString() {
-        return name + " - " + createdBy;
+        return "#" + id + " " + name + " - " + createdBy;
     }
 }
