@@ -5,6 +5,7 @@ import fhtw.timetracker.model.MeetingTask;
 import fhtw.timetracker.model.ProjectTask;
 import fhtw.timetracker.model.SupportTask;
 import fhtw.timetracker.model.Task;
+import fhtw.timetracker.server.TimeTrackerServer;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
@@ -21,7 +22,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 
 /**
- * Stage 17: Admin-Tab lädt alle Buchungen vom Server (GET_ALL_BOOKINGS).
+ * Port wird nicht mehr hardcoded, sondern kommt aus TimeTrackerServer.PORT.
  */
 public class TimeTrackerApp extends Application {
 
@@ -32,7 +33,8 @@ public class TimeTrackerApp extends Application {
 
     private final ObservableList<Booking> allBookings = FXCollections.observableArrayList();
 
-    private final TimeTrackerClientService service = new TimeTrackerClientService("127.0.0.1", 5000);
+    private final TimeTrackerClientService service =
+            new TimeTrackerClientService("127.0.0.1", TimeTrackerServer.PORT);
 
     private int nextTaskId = 1;
 
@@ -50,7 +52,7 @@ public class TimeTrackerApp extends Application {
         VBox root = new VBox(10, new Label("User:"), txtUser, tabs);
         root.setPadding(new Insets(12));
 
-        stage.setTitle("TimeTracker (Stage 17)");
+        stage.setTitle("TimeTracker (Stage 20)");
         stage.setScene(new Scene(root, 1150, 640));
         stage.show();
     }

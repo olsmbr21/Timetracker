@@ -7,7 +7,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 
 /**
- * Stage 05.1: Server nimmt Clients an und startet Threads.
+ * TCP-Server: nimmt Verbindungen an und startet pro Client einen eigenen Thread.
  */
 public class TimeTrackerServer {
 
@@ -17,10 +17,11 @@ public class TimeTrackerServer {
         CsvBookingRepository repository = new CsvBookingRepository("bookings.csv");
 
         try (ServerSocket serverSocket = new ServerSocket(PORT)) {
-            System.out.println("Server started on port " + PORT);
+            System.out.println("TimeTracker Server started on port " + PORT);
 
             while (true) {
                 Socket client = serverSocket.accept();
+                System.out.println("Client connected: " + client.getRemoteSocketAddress());
                 new Thread(new ClientHandler(client, repository), "server-client-handler").start();
             }
         } catch (IOException e) {
@@ -28,3 +29,4 @@ public class TimeTrackerServer {
         }
     }
 }
+
