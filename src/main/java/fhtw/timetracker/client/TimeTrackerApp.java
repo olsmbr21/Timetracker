@@ -11,6 +11,7 @@ import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
@@ -20,10 +21,17 @@ import javafx.stage.Stage;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.List;
 
 /**
- * Port wird nicht mehr hardcoded, sondern kommt aus TimeTrackerServer.PORT.
+ * JavaFX-Client (GUI) für den TimeTracker.
+ * Zuständigkeiten:
+ * - UI aufbauen (Tabs: Tasks / Buchungen / Admin)
+ * - Eingaben validieren (User, Task, Datum, Dauer)
+ * - Netzwerkzugriffe asynchron ausführen (keine Sockets im JavaFX-GUI-Thread)
+ * - Tabellen/Listen über ObservableLists automatisch aktualisieren
  */
+
 public class TimeTrackerApp extends Application {
 
     private final ObservableList<Task> tasks = FXCollections.observableArrayList();
@@ -40,24 +48,32 @@ public class TimeTrackerApp extends Application {
 
     @Override
     public void start(Stage stage) {
+
+        Label title = new Label("TimeTracker");
+        title.setStyle("-fx-font-size: 20px; -fx-font-weight: bold;");
+
         TextField txtUser = new TextField();
         txtUser.setPromptText("Benutzername");
 
+        HBox userBar = new HBox(10, new Label("User:"), txtUser);
+        userBar.setAlignment(Pos.CENTER_LEFT);
+
         TabPane tabs = new TabPane();
         tabs.getTabs().add(new Tab("Tasks", createTasksPane(txtUser)));
-        tabs.getTabs().add(new Tab("Bookings", createBookingsPane(txtUser)));
-        tabs.getTabs().add(new Tab("Admin", createAdminPane(txtUser)));
+        tabs.getTabs().add(new Tab("Buchungen", createBookingsPane(txtUser)));
+        tabs.getTabs().add(new Tab("Admin", createAdminPane()));
         tabs.getTabs().forEach(t -> t.setClosable(false));
 
-        VBox root = new VBox(10, new Label("User:"), txtUser, tabs);
+        VBox root = new VBox(12, title, userBar, tabs);
         root.setPadding(new Insets(12));
 
-        stage.setTitle("TimeTracker (Stage 20)");
-        stage.setScene(new Scene(root, 1150, 640));
+        stage.setTitle("TimeTracker");
+        stage.setScene(new Scene(root, 1200, 700));
         stage.show();
     }
 
     private Pane createTasksPane(TextField txtUser) {
+
         ListView<Task> list = new ListView<>(tasks);
 
         ComboBox<String> cmbType = new ComboBox<>();
@@ -68,29 +84,44 @@ public class TimeTrackerApp extends Application {
         txtDesc.setPromptText("Task Beschreibung");
 
         Button btnAdd = new Button("Task hinzufügen");
+
         Label lbl = new Label();
 
         btnAdd.setOnAction(e -> {
+
             String createdBy = txtUser.getText().trim();
             if (createdBy.isEmpty()) {
                 lbl.setText("Bitte zuerst User eingeben.");
                 return;
             }
+
             String desc = txtDesc.getText().trim();
+
             String type = cmbType.getValue();
+            if (type == null) type = "Support";
 
             Task t;
             int id = nextTaskId++;
-            if ("Support".equals(type)) t = new SupportTask(id, "Support" + id, desc, createdBy);
-            else if ("Meeting".equals(type)) t = new MeetingTask(id, "Meeting" + id, desc, createdBy);
-            else t = new ProjectTask(id, "Projektarbeit" + id, desc, createdBy);
+
+            if ("Support".equals(type)) {
+                t = new SupportTask(id, "Support" + id, desc, createdBy);
+            } else if ("Meeting".equals(type)) {
+                t = new MeetingTask(id, "Meeting" + id, desc, createdBy);
+            } else {
+                t = new ProjectTask(id, "Projektarbeit" + id, desc, createdBy);
+            }
 
             tasks.add(t);
             txtDesc.clear();
-            lbl.setText("OK: Task #" + t.getId() + " (" + t.getTypeName() + ")");
+
+            lbl.setText("OK: Task erstellt (" + t.getTypeName() + ")");
         });
 
-        HBox form = new HBox(10, new Label("Typ:"), cmbType, new Label("Beschreibung:"), txtDesc, btnAdd);
+        HBox form = new HBox(10,
+                new Label("Typ:"), cmbType,
+                new Label("Beschreibung:"), txtDesc,
+                btnAdd
+        );
         form.setPadding(new Insets(10));
 
         VBox box = new VBox(10, form, list, lbl);
@@ -99,24 +130,27 @@ public class TimeTrackerApp extends Application {
     }
 
     private Pane createBookingsPane(TextField txtUser) {
+
         ComboBox<Task> cmbTask = new ComboBox<>(tasks);
-        cmbTask.setPrefWidth(220);
+        cmbTask.setPrefWidth(240);
 
         DatePicker dpDate = new DatePicker(LocalDate.now());
+
         TextField txtDuration = new TextField();
         txtDuration.setPromptText("Minuten");
 
         TextField txtDesc = new TextField();
         txtDesc.setPromptText("Was wurde gemacht?");
 
-        DatePicker dpFrom = new DatePicker();
-        DatePicker dpTo = new DatePicker();
-        Button btnFilter = new Button("Filtern");
-        Button btnReset = new Button("Reset");
-
         Button btnCreate = new Button("Buchung senden");
         Button btnCancel = new Button("Buchung stornieren");
         Button btnLoad = new Button("Meine Buchungen laden");
+
+        DatePicker dpFrom = new DatePicker();
+        DatePicker dpTo = new DatePicker();
+
+        Button btnFilter = new Button("Filtern");
+        Button btnReset = new Button("Reset");
 
         Label lbl = new Label();
 
@@ -135,10 +169,10 @@ public class TimeTrackerApp extends Application {
         TableColumn<Booking, String> colType = new TableColumn<>("Task-Art");
         colType.setCellValueFactory(new PropertyValueFactory<>("taskType"));
 
-        TableColumn<Booking, String> colDate = new TableColumn<>("Date");
+        TableColumn<Booking, String> colDate = new TableColumn<>("Datum");
         colDate.setCellValueFactory(new PropertyValueFactory<>("date"));
 
-        TableColumn<Booking, Integer> colDur = new TableColumn<>("Minutes");
+        TableColumn<Booking, Integer> colDur = new TableColumn<>("Min");
         colDur.setCellValueFactory(new PropertyValueFactory<>("durationMinutes"));
 
         TableColumn<Booking, String> colStatus = new TableColumn<>("Status");
@@ -152,33 +186,25 @@ public class TimeTrackerApp extends Application {
 
         table.getColumns().addAll(colId, colUser, colTaskId, colType, colDate, colDur, colStatus, colTaskDesc, colDesc);
 
-        btnFilter.setOnAction(e -> {
-            LocalDate from = dpFrom.getValue();
-            LocalDate to = dpTo.getValue();
+        btnCreate.setOnAction(e -> {
 
-            ArrayList<Booking> filtered = new ArrayList<>();
-            for (Booking b : myBookingsSource) {
-                LocalDate d;
-                try { d = LocalDate.parse(b.getDate()); }
-                catch (Exception ex) { continue; }
-
-                boolean ok = (from == null || !d.isBefore(from)) && (to == null || !d.isAfter(to));
-                if (ok) filtered.add(b);
+            String user = txtUser.getText().trim();
+            if (user.isEmpty()) {
+                lbl.setText("User fehlt.");
+                return;
             }
 
-            myBookings.setAll(filtered);
-            lbl.setText("OK: Filter angewendet.");
-        });
+            Task task = cmbTask.getValue();
+            if (task == null) {
+                lbl.setText("Task auswählen.");
+                return;
+            }
 
-        btnReset.setOnAction(e -> {
-            myBookings.setAll(myBookingsSource);
-            lbl.setText("OK: Filter zurückgesetzt.");
-        });
-
-        btnCreate.setOnAction(e -> {
-            String user = txtUser.getText().trim();
-            Task t = cmbTask.getValue();
             LocalDate date = dpDate.getValue();
+            if (date == null) {
+                lbl.setText("Datum auswählen.");
+                return;
+            }
 
             int minutes;
             try {
@@ -188,21 +214,21 @@ public class TimeTrackerApp extends Application {
                 return;
             }
 
-            if (user.isEmpty()) { lbl.setText("User fehlt."); return; }
-            if (t == null) { lbl.setText("Task auswählen."); return; }
-            if (date == null) { lbl.setText("Datum auswählen."); return; }
-            if (minutes <= 0) { lbl.setText("Dauer > 0."); return; }
+            if (minutes <= 0) {
+                lbl.setText("Dauer muss > 0 sein.");
+                return;
+            }
 
             Booking b = new Booking(
                     System.currentTimeMillis(),
                     user,
-                    t.getId(),
+                    task.getId(),
                     date.toString(),
                     minutes,
                     Booking.STATUS_ACTIVE,
                     txtDesc.getText().trim(),
-                    t.getDescription(),
-                    t.getTypeName()
+                    task.getDescription(),
+                    task.getTypeName()
             );
 
             new Thread(() -> {
@@ -216,38 +242,20 @@ public class TimeTrackerApp extends Application {
                 } catch (IOException ex) {
                     Platform.runLater(() -> lbl.setText("Fehler: " + ex.getMessage()));
                 }
-            }, "client-send-booking").start();
-        });
-
-        btnCancel.setOnAction(e -> {
-            Booking sel = table.getSelectionModel().getSelectedItem();
-            String user = txtUser.getText().trim();
-
-            if (sel == null) { lbl.setText("Bitte eine Buchung auswählen."); return; }
-            if (user.isEmpty()) { lbl.setText("User fehlt."); return; }
-
-            new Thread(() -> {
-                try {
-                    service.cancelBooking(sel.getId(), user);
-                    var list = service.loadBookingsForUser(user);
-                    Platform.runLater(() -> {
-                        myBookingsSource.setAll(list);
-                        myBookings.setAll(list);
-                        lbl.setText("OK: Buchung storniert.");
-                    });
-                } catch (IOException ex) {
-                    Platform.runLater(() -> lbl.setText("Fehler: " + ex.getMessage()));
-                }
-            }, "client-cancel-booking").start();
+            }, "client-create-booking").start();
         });
 
         btnLoad.setOnAction(e -> {
+
             String user = txtUser.getText().trim();
-            if (user.isEmpty()) { lbl.setText("User fehlt."); return; }
+            if (user.isEmpty()) {
+                lbl.setText("User fehlt.");
+                return;
+            }
 
             new Thread(() -> {
                 try {
-                    var list = service.loadBookingsForUser(user);
+                    List<Booking> list = service.loadBookingsForUser(user);
                     Platform.runLater(() -> {
                         myBookingsSource.setAll(list);
                         myBookings.setAll(list);
@@ -259,24 +267,97 @@ public class TimeTrackerApp extends Application {
             }, "client-load-bookings").start();
         });
 
-        HBox form = new HBox(10,
-                new Label("Task:"), cmbTask,
-                new Label("Datum:"), dpDate,
-                new Label("Min:"), txtDuration,
-                new Label("Desc:"), txtDesc,
-                new Label("Von:"), dpFrom,
-                new Label("Bis:"), dpTo,
-                btnFilter, btnReset,
-                btnCreate, btnCancel, btnLoad
-        );
+        btnCancel.setOnAction(e -> {
+
+            String user = txtUser.getText().trim();
+            if (user.isEmpty()) {
+                lbl.setText("User fehlt.");
+                return;
+            }
+
+            Booking selected = table.getSelectionModel().getSelectedItem();
+            if (selected == null) {
+                lbl.setText("Bitte eine Buchung auswählen.");
+                return;
+            }
+
+            new Thread(() -> {
+                try {
+                    service.cancelBooking(selected.getId(), user);
+
+                    List<Booking> list = service.loadBookingsForUser(user);
+                    Platform.runLater(() -> {
+                        myBookingsSource.setAll(list);
+                        myBookings.setAll(list);
+                        lbl.setText("OK: Buchung storniert.");
+                    });
+
+                } catch (IOException ex) {
+                    Platform.runLater(() -> lbl.setText("Fehler: " + ex.getMessage()));
+                }
+            }, "client-cancel-booking").start();
+        });
+
+        btnFilter.setOnAction(e -> {
+            LocalDate from = dpFrom.getValue();
+            LocalDate to = dpTo.getValue();
+
+            List<Booking> filtered = new ArrayList<>();
+            for (Booking b : myBookingsSource) {
+                boolean ok = true;
+                if (from != null && b.getDate().compareTo(from.toString()) < 0) ok = false;
+                if (to != null && b.getDate().compareTo(to.toString()) > 0) ok = false;
+
+                if (ok) filtered.add(b);
+            }
+            myBookings.setAll(filtered);
+            lbl.setText("OK: Filter angewendet.");
+        });
+
+        btnReset.setOnAction(e -> {
+            myBookings.setAll(myBookingsSource);
+            lbl.setText("OK: Filter zurückgesetzt.");
+        });
+
+        GridPane form = new GridPane();
+        form.setHgap(10);
+        form.setVgap(10);
         form.setPadding(new Insets(10));
+
+        int r = 0;
+        form.add(new Label("Task:"), 0, r);
+        form.add(cmbTask, 1, r);
+        form.add(new Label("Datum:"), 2, r);
+        form.add(dpDate, 3, r);
+
+        r++;
+        form.add(new Label("Minuten:"), 0, r);
+        form.add(txtDuration, 1, r);
+        form.add(new Label("Was wurde gemacht?:"), 2, r);
+        form.add(txtDesc, 3, r);
+
+        r++;
+        form.add(btnCreate, 0, r);
+        form.add(btnCancel, 1, r);
+        form.add(btnLoad, 2, r);
+
+        r++;
+        form.add(new Label("Von:"), 0, r);
+        form.add(dpFrom, 1, r);
+        form.add(new Label("Bis:"), 2, r);
+        form.add(dpTo, 3, r);
+
+        r++;
+        form.add(btnFilter, 0, r);
+        form.add(btnReset, 1, r);
 
         VBox box = new VBox(10, form, table, lbl);
         box.setPadding(new Insets(10));
         return box;
     }
 
-    private Pane createAdminPane(TextField txtUser) {
+    private Pane createAdminPane() {
+
         Label lbl = new Label();
 
         TableView<Booking> table = new TableView<>(allBookings);
@@ -294,10 +375,10 @@ public class TimeTrackerApp extends Application {
         TableColumn<Booking, String> colType = new TableColumn<>("Task-Art");
         colType.setCellValueFactory(new PropertyValueFactory<>("taskType"));
 
-        TableColumn<Booking, String> colDate = new TableColumn<>("Date");
+        TableColumn<Booking, String> colDate = new TableColumn<>("Datum");
         colDate.setCellValueFactory(new PropertyValueFactory<>("date"));
 
-        TableColumn<Booking, Integer> colDur = new TableColumn<>("Minutes");
+        TableColumn<Booking, Integer> colDur = new TableColumn<>("Min");
         colDur.setCellValueFactory(new PropertyValueFactory<>("durationMinutes"));
 
         TableColumn<Booking, String> colStatus = new TableColumn<>("Status");
@@ -308,7 +389,7 @@ public class TimeTrackerApp extends Application {
         Button btnLoadAll = new Button("Alle Buchungen laden");
         btnLoadAll.setOnAction(e -> new Thread(() -> {
             try {
-                var list = service.loadAllBookings();
+                List<Booking> list = service.loadAllBookings();
                 Platform.runLater(() -> {
                     allBookings.setAll(list);
                     lbl.setText("OK: " + list.size() + " Buchungen geladen.");
@@ -327,3 +408,4 @@ public class TimeTrackerApp extends Application {
         launch(args);
     }
 }
+
