@@ -44,26 +44,24 @@ public class ClientHandler implements Runnable {
         }
     }
 
-    private String handleCommand(String line) {
+    private String handleCommand(String line) throws IOException {
         String[] parts = line.split(";", 2);
-        String command = parts[0];
+        String cmd = parts[0];
         String data = (parts.length > 1) ? parts[1] : "";
 
-        try {
-            if ("CREATE_BOOKING".equals(command)) return handleCreateBooking(data);
-            if ("GET_BOOKINGS".equals(command)) return handleGetBookings(data);
-            if ("GET_ALL_BOOKINGS".equals(command)) return handleGetAllBookings();
-            if ("CANCEL_BOOKING".equals(command)) return handleCancelBooking(data);
-            if ("QUIT".equals(command)) return "OK\n";
-            return "ERROR;Unknown command\n";
-        } catch (IOException e) {
-            return "ERROR;" + e.getMessage() + "\n";
-        }
+        if ("CREATE_BOOKING".equals(cmd)) return handleCreateBooking(data);
+        if ("GET_BOOKINGS".equals(cmd)) return handleGetBookings(data);
+        if ("GET_ALL_BOOKINGS".equals(cmd)) return handleGetAllBookings();
+        if ("CANCEL_BOOKING".equals(cmd)) return handleCancelBooking(data);
+        if ("QUIT".equals(cmd)) return "OK\n";
+
+        return "ERROR;Unknown command\n";
     }
 
     private String handleCreateBooking(String data) throws IOException {
         Booking booking = Booking.fromCsvLine(data);
         if (booking == null) return "ERROR;Invalid booking data\n";
+
         repository.saveBooking(booking);
         return "OK\n";
     }
@@ -73,6 +71,7 @@ public class ClientHandler implements Runnable {
 
         List<Booking> all = repository.loadAll();
         StringBuilder sb = new StringBuilder("OK\n");
+
         for (Booking b : all) {
             if (userName.equals(b.getUserName())) sb.append(b.toCsvLine()).append("\n");
         }
@@ -89,20 +88,21 @@ public class ClientHandler implements Runnable {
     }
 
     private String handleCancelBooking(String data) throws IOException {
-        String[] parts = data.split(";", -1);
-        if (parts.length != 2) return "ERROR;Invalid cancel data\n";
+        String[] parts = data.split(";", 2);
+        if (parts.length < 2) return "ERROR;Invalid cancel data\n";
 
         long bookingId;
         try {
             bookingId = Long.parseLong(parts[0]);
-        } catch (NumberFormatException ex) {
+        } catch (NumberFormatException e) {
             return "ERROR;Invalid bookingId\n";
         }
+
         String userName = parts[1];
+        if (userName.isBlank()) return "ERROR;Missing username\n";
 
         boolean ok = repository.cancelBooking(bookingId, userName);
-        return ok ? "OK\n" : "ERROR;Not allowed\n";
+        if (ok) return "OK\n";
+        return "ERROR;Not allowed\n";
     }
 }
-
-
