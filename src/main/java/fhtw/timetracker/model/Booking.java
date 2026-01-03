@@ -1,3 +1,4 @@
+
 package fhtw.timetracker.model;
 
 /**
@@ -20,10 +21,6 @@ public class Booking {
     private String taskDescription;
     private String taskType;
 
-    public Booking(long id, String userName, int taskId, String date, int durationMinutes, String status) {
-        this(id, userName, taskId, date, durationMinutes, status, "", "", "");
-    }
-
     public Booking(long id, String userName, int taskId, String date,
                    int durationMinutes, String status,
                    String description, String taskDescription, String taskType) {
@@ -39,16 +36,12 @@ public class Booking {
     }
 
     public long getId() { return id; }
-    public void setId(long id) { this.id = id; }
 
     public String getUserName() { return userName; }
-    public void setUserName(String userName) { this.userName = userName; }
 
     public int getTaskId() { return taskId; }
-    public void setTaskId(int taskId) { this.taskId = taskId; }
 
     public String getDate() { return date; }
-    public void setDate(String date) { this.date = date; }
 
     public int getDurationMinutes() { return durationMinutes; }
     public void setDurationMinutes(int durationMinutes) { this.durationMinutes = durationMinutes; }
@@ -63,31 +56,27 @@ public class Booking {
     public void setTaskDescription(String taskDescription) { this.taskDescription = taskDescription; }
 
     public String getTaskType() { return taskType; }
-    public void setTaskType(String taskType) { this.taskType = taskType; }
 
-    public String toCsvLine() {
-        return id + ";" + safe(userName) + ";" + taskId + ";" + safe(date) + ";" + durationMinutes + ";" + safe(status) + ";"
-                + safe(description) + ";" + safe(taskDescription) + ";" + safe(taskType);
+
+    // Verhindert, dass Freitext das CSV-Format zerstört (Semikolon ist unser Trennzeichen)
+    private static String safe(String s) {
+        if (s == null) return "";
+        return s.replace(";", ",");
     }
+    public String toCsvLine() {
+        return id + ";" + safe(userName) + ";" + taskId + ";" + safe(date) + ";" +
+                durationMinutes + ";" + safe(status) + ";" +
+                safe(description) + ";" + safe(taskDescription) + ";" + safe(taskType);
+    }
+
 
     public static Booking fromCsvLine(String line) {
         if (line == null || line.isBlank()) return null;
 
         String[] parts = line.split(";", -1);
+        if (parts.length != 9) return null;
 
         try {
-            if (parts.length == 6) {
-                long id = Long.parseLong(parts[0]);
-                String userName = parts[1];
-                int taskId = Integer.parseInt(parts[2]);
-                String date = parts[3];
-                int duration = Integer.parseInt(parts[4]);
-                String status = parts[5];
-                return new Booking(id, userName, taskId, date, duration, status);
-            }
-
-            if (parts.length != 9) return null;
-
             long id = Long.parseLong(parts[0]);
             String userName = parts[1];
             int taskId = Integer.parseInt(parts[2]);
@@ -103,10 +92,6 @@ public class Booking {
             return null;
         }
     }
-
-    private static String safe(String s) {
-        if (s == null) return "";
-        return s.replace(";", ",");
-    }
 }
+
 
