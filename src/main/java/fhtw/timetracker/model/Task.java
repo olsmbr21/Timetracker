@@ -1,3 +1,5 @@
+
+
 package fhtw.timetracker.model;
 
 /**
@@ -30,14 +32,10 @@ public class Task {
     public String getCreatedBy() { return createdBy; }
     public void setCreatedBy(String createdBy) { this.createdBy = createdBy; }
 
-    /**
-     * Wird von Unterklassen überschrieben (Meeting/Support/Projektarbeit).
-     * Basisklasse liefert als Fallback den Namen zurück.
-     */
     public String getTypeName() { return name; }
 
     @Override
     public String toString() {
-        return "#" + id + " " + name + " - " + createdBy;
+        return name + " - " + createdBy;
     }
 }
