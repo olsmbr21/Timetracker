@@ -183,6 +183,24 @@ public class BookingsTab {
             thread.start();
         });
 
+        btnFilter.setOnAction(e -> {
+            List<Booking> filtered = new ArrayList<>();
+            for (Booking b : source) {
+                boolean ok = true;
+
+                if (dpFrom.getValue() != null) {
+                    ok = b.getDate().compareTo(dpFrom.getValue().toString()) >= 0;
+                }
+                if (ok && dpTo.getValue() != null) {
+                    ok = b.getDate().compareTo(dpTo.getValue().toString()) <= 0;
+                }
+                if (ok) filtered.add(b);
+            }
+            myBookings.setAll(filtered);
+        });
+
+        btnReset.setOnAction(e -> myBookings.setAll(source));
+
         root = new VBox(10,
                 new Label("Neue Buchung:"),
                 input,
@@ -195,6 +213,7 @@ public class BookingsTab {
                 table
         );
         root.setPadding(new Insets(10));
+
     }
     private void setList(List<Booking> list) {
         source.clear();
