@@ -42,6 +42,7 @@ public class AdminTab {
     }
 
     private void build() {
+        table = BookingTable.create();
         table.setItems(allBookings);
 
         btnLoadAll = new Button("Alle Buchungen laden");
