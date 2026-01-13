@@ -12,6 +12,8 @@ import javafx.scene.control.TextField;
 import javafx.scene.layout.HBox;
 import java.util.ArrayList;
 import java.util.List;
+import javafx.application.Platform;
+import java.io.IOException;
 
 public class AdminTab {
 
@@ -59,5 +61,46 @@ public class AdminTab {
 
         root = new VBox(10, controls, new Label("Alle Buchungen:"), table);
         root.setPadding(new Insets(10));
+
+        btnLoadAll.setOnAction(e -> {
+            Thread thread = new Thread(() -> {
+                try {
+                    List<Booking> list = service.loadAllBookings();
+                    Platform.runLater(() -> setList(list));
+                } catch (IOException ex) {
+                    Platform.runLater(() -> UiPopups.error("Beim Laden aller Buchungen ist ein Fehler aufgetreten."));
+                }
+            }, "client-load-all-bookings");
+            thread.setDaemon(true);
+            thread.start();
+        });
+
+        btnApply.setOnAction(e -> {
+            String user = txtUserFilter.getText().trim();
+            Integer taskId = null;
+
+            try {
+                String raw = txtTaskIdFilter.getText().trim();
+                if (!raw.isEmpty()) taskId = Integer.parseInt(raw);
+            } catch (NumberFormatException ignored) {}
+
+            List<Booking> filtered = new ArrayList<>();
+            for (Booking b : source) {
+                boolean ok = true;
+                if (!user.isEmpty()) ok = user.equals(b.getUserName());
+                if (ok && taskId != null) ok = (b.getTaskId() == taskId);
+                if (ok) filtered.add(b);
+            }
+            allBookings.setAll(filtered);
+        });
+
+        btnReset.setOnAction(e -> allBookings.setAll(source));
     }
+
+    private void setList(List<Booking> list) {
+        source.clear();
+        source.addAll(list);
+        allBookings.setAll(list);
+    }
+
 }
