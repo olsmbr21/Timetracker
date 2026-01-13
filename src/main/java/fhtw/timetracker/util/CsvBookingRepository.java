@@ -66,7 +66,6 @@ public class CsvBookingRepository {
 
     public synchronized boolean cancelBooking(long bookingId, String userName) throws IOException {
         List<Booking> all = loadAll();
-
         boolean changed = false;
 
         for (Booking b : all) {

@@ -60,7 +60,7 @@ public class TimeTrackerClientService {
         }
     }
 
-    // Stage 14: neu
+
     public List<Booking> loadAllBookings() throws IOException {
         try (Socket socket = new Socket(host, port);
              BufferedWriter out = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8));
