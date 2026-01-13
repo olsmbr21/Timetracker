@@ -6,4 +6,6 @@ module com.example.timetracker {
     exports fhtw.timetracker.client;
 
     opens fhtw.timetracker.client to javafx.fxml;
+
+    opens fhtw.timetracker.model to javafx.base, javafx.fxml;
 }
