@@ -1,5 +1,8 @@
 package fhtw.timetracker.client;
 
+import fhtw.timetracker.model.MeetingTask;
+import fhtw.timetracker.model.ProjectTask;
+import fhtw.timetracker.model.SupportTask;
 import fhtw.timetracker.model.Task;
 import javafx.collections.ObservableList;
 import javafx.scene.control.TextField;
@@ -17,6 +20,8 @@ public class TasksTab {
     private TextField txtUser;
     private ObservableList<Task> tasks;
     private VBox root;
+
+    private int nextTaskId = 1;
 
     private ComboBox<String> cbType;
     private TextArea txtDesc;
@@ -44,6 +49,35 @@ public class TasksTab {
         btnAdd = new Button("Task hinzufügen");
 
         listView = new ListView<>(tasks);
+
+
+        btnAdd.setOnAction(e -> {
+            String user = txtUser.getText().trim();
+            String type = cbType.getValue();
+            String desc = txtDesc.getText().trim();
+
+            if (user.isEmpty()) { UiPopups.warn("Bitte zuerst einen Benutzernamen eingeben."); return; }
+            if (type == null || type.isBlank()) { UiPopups.warn("Bitte einen Task-Typ auswählen."); return; }
+
+            int id = nextTaskId++;
+
+            int number = 1;
+            for (Task t : tasks) {
+                if (user.equals(t.getCreatedBy()) && type.equals(t.getTypeName())) number++;
+            }
+
+            String name = type + number;
+
+            Task task;
+            if ("Projektarbeit".equals(type)) task = new ProjectTask(id, name, desc, user);
+            else if ("Support".equals(type)) task = new SupportTask(id, name, desc, user);
+            else task = new MeetingTask(id, name, desc, user);
+
+            tasks.add(task);
+
+            cbType.getSelectionModel().clearSelection();
+            txtDesc.clear();
+        });
 
         root = new VBox(10,
                 new Label("Neuer Task:"),
