@@ -65,6 +65,7 @@ public class BookingsTab {
         cbTask.setPromptText("Task wählen");
 
         dpDate = new DatePicker();
+        dpDate.setEditable(false);
 
         txtDuration = new TextField();
         txtDuration.setPromptText("Minuten");
