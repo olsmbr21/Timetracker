@@ -74,20 +74,9 @@ public class Booking {
         if (line == null || line.isBlank()) return null;
 
         String[] parts = line.split(";", -1);
+        if (parts.length != 9) return null;
 
         try {
-            if (parts.length == 6) {
-                long id = Long.parseLong(parts[0]);
-                String userName = parts[1];
-                int taskId = Integer.parseInt(parts[2]);
-                String date = parts[3];
-                int duration = Integer.parseInt(parts[4]);
-                String status = parts[5];
-                return new Booking(id, userName, taskId, date, duration, status);
-            }
-
-            if (parts.length != 9) return null;
-
             long id = Long.parseLong(parts[0]);
             String userName = parts[1];
             int taskId = Integer.parseInt(parts[2]);
