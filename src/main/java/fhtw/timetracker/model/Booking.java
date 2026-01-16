@@ -20,10 +20,6 @@ public class Booking {
     private String taskDescription;
     private String taskType;
 
-    public Booking(long id, String userName, int taskId, String date, int durationMinutes, String status) {
-        this(id, userName, taskId, date, durationMinutes, status, "", "", "");
-    }
-
     public Booking(long id, String userName, int taskId, String date,
                    int durationMinutes, String status,
                    String description, String taskDescription, String taskType) {
