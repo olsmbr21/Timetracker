@@ -1,8 +1,6 @@
 package fhtw.timetracker.model;
 
-/**
- * Task-Typ: Support.
- */
+
 public class SupportTask extends Task {
 
     public SupportTask(int id, String numberedName, String description, String createdBy) {
