@@ -5,13 +5,9 @@ import fhtw.timetracker.util.CsvBookingRepository;
 
 import java.io.*;
 import java.net.Socket;
-import java.net.SocketException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
-/**
- * Bearbeitet eine Client-Verbindung und setzt das Textprotokoll um.
- */
 public class ClientHandler implements Runnable {
 
     private final Socket socket;
@@ -21,7 +17,6 @@ public class ClientHandler implements Runnable {
         this.socket = socket;
         this.repository = repository;
     }
-
     @Override
     public void run() {
         try (Socket s = socket;
@@ -30,15 +25,9 @@ public class ClientHandler implements Runnable {
 
             String line;
             while ((line = in.readLine()) != null) {
-                if (line.isBlank()) continue;
-
                 out.write(handleCommand(line));
                 out.flush();
-
-                if (line.startsWith("QUIT")) break;
             }
-        } catch (SocketException e) {
-            // Normal, wenn Client abrupt schließt (z.B. Windows "connection aborted").
         } catch (IOException e) {
             System.err.println("ClientHandler error: " + e.getMessage());
         }
@@ -87,7 +76,6 @@ public class ClientHandler implements Runnable {
         sb.append("END\n");
         return sb.toString();
     }
-
     private String handleCancelBooking(String data) throws IOException {
         String[] parts = data.split(";", -1);
         if (parts.length != 2) return "ERROR;Invalid cancel data\n";
@@ -99,10 +87,7 @@ public class ClientHandler implements Runnable {
             return "ERROR;Invalid bookingId\n";
         }
         String userName = parts[1];
-
         boolean ok = repository.cancelBooking(bookingId, userName);
         return ok ? "OK\n" : "ERROR;Not allowed\n";
     }
 }
-
-

@@ -1,9 +1,6 @@
 package fhtw.timetracker.model;
 
-/**
- * Basisklasse für Tasks.
- * name = UI-Name (z.B. "Support2"), getTypeName() = fachlicher Typ (z.B. "Support").
- */
+
 public class Task {
 
     private int id;
@@ -30,10 +27,6 @@ public class Task {
     public String getCreatedBy() { return createdBy; }
     public void setCreatedBy(String createdBy) { this.createdBy = createdBy; }
 
-    /**
-     * Wird von Unterklassen überschrieben (Meeting/Support/Projektarbeit).
-     * Basisklasse liefert als Fallback den Namen zurück.
-     */
     public String getTypeName() { return name; }
 
     @Override

@@ -8,9 +8,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * TCP-Client-Service (Request/Response).
- */
 public class TimeTrackerClientService {
 
     private final String host;

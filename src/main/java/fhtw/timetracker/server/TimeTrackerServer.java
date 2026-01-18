@@ -6,9 +6,6 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 
-/**
- * Stage 05.1: Server nimmt Clients an und startet Threads.
- */
 public class TimeTrackerServer {
 
     public static final int PORT = 5000;
@@ -21,6 +18,7 @@ public class TimeTrackerServer {
 
             while (true) {
                 Socket client = serverSocket.accept();
+                System.out.println("Client connected from: " + client.getRemoteSocketAddress());
                 new Thread(new ClientHandler(client, repository), "server-client-handler").start();
             }
         } catch (IOException e) {

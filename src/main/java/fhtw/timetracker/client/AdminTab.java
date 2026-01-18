@@ -83,7 +83,9 @@ public class AdminTab {
             try {
                 String raw = txtTaskIdFilter.getText().trim();
                 if (!raw.isEmpty()) taskId = Integer.parseInt(raw);
-            } catch (NumberFormatException ignored) {}
+            } catch (NumberFormatException ex) {
+                UiPopups.warn("Task-ID muss ein Zahl sein");
+            }
 
             List<Booking> filtered = new ArrayList<>();
             for (Booking b : source) {

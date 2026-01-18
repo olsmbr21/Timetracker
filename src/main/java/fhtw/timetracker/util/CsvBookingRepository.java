@@ -10,10 +10,6 @@ import java.nio.file.*;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * CSV-Persistenz für Buchungen (Server-seitig).
- * synchronized verhindert Dateikonflikte bei parallelen Clients.
- */
 public class CsvBookingRepository {
 
     private final Path file;

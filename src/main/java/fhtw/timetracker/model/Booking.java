@@ -1,9 +1,5 @@
 package fhtw.timetracker.model;
 
-/**
- * CSV-Format (9 Spalten):
- * id;userName;taskId;date;durationMinutes;status;description;taskDescription;taskType
- */
 public class Booking {
 
     public static final String STATUS_ACTIVE = "ACTIVE";
