@@ -8,7 +8,7 @@ public class Booking {
     private long id;
     private String userName;
     private int taskId;
-    private String date; // yyyy-MM-dd
+    private String date;
     private int durationMinutes;
     private String status;
 

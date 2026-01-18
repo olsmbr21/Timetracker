@@ -1,8 +1,6 @@
 package fhtw.timetracker.model;
 
-/**
- * Task-Typ: Meeting
- */
+
 public class MeetingTask extends Task {
 
 
